@@ -1,0 +1,15 @@
+spring:
+    application:
+        name: ccgateway
+
+server:
+    port: 9999
+cc:
+    gateway:
+        routes:
+           - id: baidu
+             path: /mars-server-wechat-mp/**
+             uri: https://mars-dev-huawei.nhsoft.cn
+           - id: qq
+             path: /mars-server-core/**
+             uri: https://mars-dev-huawei.nhsoft.cn
