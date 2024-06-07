@@ -2,15 +2,14 @@ package io.cc.gateway.plugin;
 
 import io.cc.gateway.AbstractGatewayPlugin;
 import io.cc.gateway.GatewayPluginChain;
-import io.cc.gateway.route.PathRouteSelector;
 import io.cc.gateway.route.Route;
-import io.cc.gateway.support.GatewayExchangeUtils;
+import io.cc.gateway.route.RouteSelector;
 import java.net.URI;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
@@ -19,19 +18,24 @@ import reactor.core.publisher.Mono;
 /**
  * @author nhsoft.lsd
  */
-public class InMemoryPlugin extends AbstractGatewayPlugin {
+@Slf4j
+public class WebPlugin extends AbstractGatewayPlugin {
+
+    private static final String NAME = "web";
 
     private final List<Route> routes;
 
-    private PathRouteSelector routeSelector;
+    private RouteSelector routeSelector;
 
-    public InMemoryPlugin(final List<Route> routes) {
+    public WebPlugin(final List<Route> routes, final RouteSelector routeSelector) {
         this.routes = routes;
+        this.routeSelector = routeSelector;
     }
 
     @Override
     public Mono<Void> doHandle(final ServerWebExchange exchange, final GatewayPluginChain chain) {
-        Route route = exchange.getRequiredAttribute(GatewayExchangeUtils.ROURE);
+
+        Route route = routeSelector.selectOne(exchange);
         URI requestUrl = route.getUri();
         String scheme = requestUrl.getScheme();
 
@@ -44,14 +48,19 @@ public class InMemoryPlugin extends AbstractGatewayPlugin {
         HttpMethod method = request.getMethod();
 
         WebClient.RequestBodySpec bodySpec = WebClient.create().method(method).uri(requestUrl + toPath(request)).headers(httpHeaders -> {
-            httpHeaders.addAll(exchange.getRequest().getHeaders());
+            exchange.getRequest().getHeaders().forEach((key, value) -> {
+                if (key.equals("host")) {
+                    return;
+                }
+                httpHeaders.addAll(key, value);
+            });
+
         });
 
         WebClient.RequestHeadersSpec<?> headersSpec;
         if (requiresBody(method)) {
             headersSpec = bodySpec.body(BodyInserters.fromDataBuffers(request.getBody()));
-        }
-        else {
+        } else {
             headersSpec = bodySpec;
         }
 
@@ -61,8 +70,8 @@ public class InMemoryPlugin extends AbstractGatewayPlugin {
             Mono<String> body = entity.mapNotNull(ResponseEntity::getBody);
             exchange.getResponse().getHeaders().addAll(resp.request().getHeaders());
 
-            return body.flatMap(x->exchange.getResponse()
-                            .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(x.getBytes()))))
+            return body.flatMap(x-> exchange.getResponse()
+                    .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(x.getBytes()))))
                     .then(chain.handle(exchange));
         });
     }
@@ -79,11 +88,8 @@ public class InMemoryPlugin extends AbstractGatewayPlugin {
 
     @Override
     public boolean doSupports(final ServerWebExchange exchange) {
-        if (routes == null || routes.isEmpty()) {
-            return false;
-        }
-        Route route = routeSelector.selectOne(exchange);
-        return route != null;
+        String plugin = exchange.getRequest().getHeaders().getFirst("plugin");
+        return plugin.equals(NAME);
     }
 
     private boolean requiresBody(HttpMethod method) {

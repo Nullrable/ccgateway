@@ -2,6 +2,7 @@ package io.cc.gateway;
 
 import io.cc.gateway.filter.WebClientHttpRoutingFilter;
 import io.cc.gateway.handler.FilteringWebHandler;
+import io.cc.gateway.handler.PluginWebHandler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -16,8 +17,10 @@ public class WebHandlerBeanDefinitionRegistryPostProcessor implements BeanDefini
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+
+        //TODO nhsoft.lsd 初始化 FilteringWebHandler or PluginWebHandler
         final String webHandler = "webHandler";
-        final String engineHandler = FilteringWebHandler.NAME;
+        final String engineHandler = PluginWebHandler.NAME;
 
         if (registry.containsBeanDefinition(webHandler) && registry.containsBeanDefinition(engineHandler)) {
             registry.removeBeanDefinition(webHandler);

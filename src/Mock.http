@@ -1,0 +1,4 @@
+###
+GET http://localhost:9999/mars-server-wechat-mp/admin/api/internal/endpoint.json
+gateway-plugin: web
+Content-Type: application/json

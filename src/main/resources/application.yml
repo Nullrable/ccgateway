@@ -13,3 +13,22 @@ cc:
            - id: qq
              path: /mars-server-core/**
              uri: https://mars-dev-huawei.nhsoft.cn
+ccregistry:
+  servers:
+    - http://localhost:8787
+#    - http://localhost:8788
+#    - http://localhost:8789
+
+ccrpc:
+  app:
+    id: app1
+    namespace: public
+    env: dev
+  consumer:
+    retries: 2
+    gray-ratio: 33
+    connect-timeout: 5000
+    read-timeout: 1_000
+    fault-limit: 10 # 30s 内10次错误则隔离
+    half-open-initial-delay: 10000
+    half-open-delay: 60000
