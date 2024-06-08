@@ -4,9 +4,10 @@ import io.cc.gateway.AbstractGatewayPlugin;
 import io.cc.gateway.GatewayPluginChain;
 import io.cc.gateway.route.Route;
 import io.cc.gateway.route.RouteSelector;
+import io.cc.gateway.support.PluginEnum;
 import java.net.URI;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -19,16 +20,11 @@ import reactor.core.publisher.Mono;
  * @author nhsoft.lsd
  */
 @Slf4j
-public class WebPlugin extends AbstractGatewayPlugin {
-
-    private static final String NAME = "web";
-
-    private final List<Route> routes;
+public class WebClientPlugin extends AbstractGatewayPlugin {
 
     private RouteSelector routeSelector;
 
-    public WebPlugin(final List<Route> routes, final RouteSelector routeSelector) {
-        this.routes = routes;
+    public WebClientPlugin(final RouteSelector routeSelector) {
         this.routeSelector = routeSelector;
     }
 
@@ -48,13 +44,8 @@ public class WebPlugin extends AbstractGatewayPlugin {
         HttpMethod method = request.getMethod();
 
         WebClient.RequestBodySpec bodySpec = WebClient.create().method(method).uri(requestUrl + toPath(request)).headers(httpHeaders -> {
-            exchange.getRequest().getHeaders().forEach((key, value) -> {
-                if (key.equals("host")) {
-                    return;
-                }
-                httpHeaders.addAll(key, value);
-            });
-
+            httpHeaders.addAll(exchange.getRequest().getHeaders());
+            httpHeaders.remove(HttpHeaders.HOST);
         });
 
         WebClient.RequestHeadersSpec<?> headersSpec;
@@ -89,7 +80,7 @@ public class WebPlugin extends AbstractGatewayPlugin {
     @Override
     public boolean doSupports(final ServerWebExchange exchange) {
         String plugin = exchange.getRequest().getHeaders().getFirst("plugin");
-        return plugin.equals(NAME);
+        return plugin != null && plugin.equals(PluginEnum.WEB_CLIENT.name());
     }
 
     private boolean requiresBody(HttpMethod method) {

@@ -7,8 +7,8 @@ import io.cc.config.client.annotation.EnableCcConfig;
 import io.cc.gateway.filter.WebClientHttpRoutingFilter;
 import io.cc.gateway.handler.FilteringWebHandler;
 import io.cc.gateway.handler.PluginWebHandler;
-import io.cc.gateway.plugin.WebPlugin;
-import io.cc.gateway.plugin.CcRPCPlugin;
+import io.cc.gateway.plugin.WebClientPlugin;
+import io.cc.gateway.plugin.CcRpcPlugin;
 import io.cc.gateway.route.PathRouteSelector;
 import io.cc.gateway.route.RouteProperties;
 import io.cc.gateway.route.RouteSelector;
@@ -36,12 +36,12 @@ public class GatewayAutoConfiguration {
 
     @Bean
     public GatewayPlugin inMemoryPlugin(RouteProperties routeProperties, RouteSelector routeSelector){
-        return new WebPlugin(routeProperties.getRoutes(), routeSelector);
+        return new WebClientPlugin(routeSelector);
     }
 
     @Bean
-    public CcRPCPlugin registryCenterPlugin(RegisterCenter registerCenter, LoadBalancer loadBalancer) {
-        return new CcRPCPlugin(registerCenter, loadBalancer);
+    public CcRpcPlugin registryCenterPlugin(RegisterCenter registerCenter, LoadBalancer loadBalancer) {
+        return new CcRpcPlugin(registerCenter, loadBalancer);
     }
 
     @Bean

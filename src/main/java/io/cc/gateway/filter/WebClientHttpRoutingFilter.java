@@ -6,6 +6,7 @@ import io.cc.gateway.route.Route;
 import io.cc.gateway.support.GatewayExchangeUtils;
 import java.net.URI;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -36,6 +37,7 @@ public class WebClientHttpRoutingFilter implements GatewayFilter, Ordered {
 
         WebClient.RequestBodySpec bodySpec = WebClient.create().method(method).uri(requestUrl + toPath(request)).headers(httpHeaders -> {
             httpHeaders.addAll(exchange.getRequest().getHeaders());
+            httpHeaders.remove(HttpHeaders.HOST);
         });
 
         WebClient.RequestHeadersSpec<?> headersSpec;

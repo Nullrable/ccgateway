@@ -6,7 +6,9 @@ import cc.rpc.core.meta.InstanceMeta;
 import cc.rpc.core.meta.ServiceMeta;
 import io.cc.gateway.AbstractGatewayPlugin;
 import io.cc.gateway.GatewayPluginChain;
+import io.cc.gateway.support.PluginEnum;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -17,15 +19,13 @@ import reactor.core.publisher.Mono;
 /**
  * @author nhsoft.lsd
  */
-public class CcRPCPlugin extends AbstractGatewayPlugin {
-
-    private static final String NAME = "ccrpc";
+public class CcRpcPlugin extends AbstractGatewayPlugin {
 
     private RegisterCenter registerCenter;
 
     private LoadBalancer loadBalancer;
 
-    public CcRPCPlugin(final RegisterCenter registerCenter, final LoadBalancer loadBalancer) {
+    public CcRpcPlugin(final RegisterCenter registerCenter, final LoadBalancer loadBalancer) {
         this.registerCenter = registerCenter;
         this.loadBalancer = loadBalancer;
     }
@@ -33,7 +33,7 @@ public class CcRPCPlugin extends AbstractGatewayPlugin {
     @Override
     public boolean doSupports(final ServerWebExchange exchange) {
         String plugin = exchange.getRequest().getHeaders().getFirst("plugin");
-        return plugin.equals(NAME);
+        return plugin != null && plugin.equals(PluginEnum.CCRPC.name());
     }
 
     @Override
@@ -54,7 +54,10 @@ public class CcRPCPlugin extends AbstractGatewayPlugin {
         System.out.println("=====>>>>>" + requestUrl);
 
         WebClient.RequestHeadersSpec<?> headersSpec = WebClient.create().method(HttpMethod.POST).uri(requestUrl)
-                .header("Content-Type", "application/json")
+                .headers(headers -> {
+                    headers.addAll(exchange.getRequest().getHeaders());
+                    headers.remove(HttpHeaders.HOST);
+                })
                 .body(BodyInserters.fromDataBuffers(exchange.getRequest().getBody()));
 
         return headersSpec.exchangeToMono(resp -> {
