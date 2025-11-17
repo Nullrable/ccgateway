@@ -18,7 +18,7 @@ public abstract class AbstractGatewayPlugin implements GatewayPlugin {
 
     @Override
     public Mono<Void> handle(final ServerWebExchange exchange, final GatewayPluginChain chain) {
-        boolean supports = doSupports(exchange);
+        boolean supports = supports(exchange);
         return supports ? doHandle(exchange, chain) : chain.handle(exchange);
     }
 
